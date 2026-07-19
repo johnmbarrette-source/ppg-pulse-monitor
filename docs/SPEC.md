@@ -1,102 +1,95 @@
-# Fingertip PPG Pulse Monitor — Target Specification & Verification Plan
+# Fingertip PPG Pulse Monitor — Design Specification & Test Plan
 
-| | |
-|---|---|
-| **Document** | Target Specification & Verification Plan |
-| **Version** | 1.0 — **FROZEN** (acceptance criteria locked prior to data collection) |
-| **Date frozen** | 2026-07-19 |
-| **Author** | *John Barrette* |
-| **Status** | Targets locked. Result / Pass–Fail columns to be completed after the validation study (Week 6). |
+**Author:** John Barrette
+**Version:** 1.0
+**Date:** July 19, 2026
+**Status:** Performance targets set before data collection. Measured results are added to the tables after testing.
 
-> **Why this document exists:** Acceptance criteria are defined here *before* any validation
-> data is collected, then the device is tested against them and the measured results recorded in
-> the tables below. Setting the spec first and testing against it — rather than tuning the device
-> and reporting whatever it happens to do — is the core of a verification-and-validation (V&V)
-> workflow. **These targets are frozen as of the date above and must not be changed after data
-> collection begins.**
+This document lists the design requirements and target specifications for my fingertip pulse
+monitor, and how each one is tested. I set the performance targets before collecting any data, so
+the device is judged against fixed criteria instead of numbers chosen to match the results. The
+result columns are left blank until testing is done.
 
----
+## 1. Purpose and Scope
 
-## 1. Purpose & Scope
+A tethered fingertip pulse monitor that measures heart rate (HR) and an uncalibrated blood-oxygen
+(SpO2) estimate, and that is used as the subject of a measurement-agreement study against a
+reference heart-rate device. The scope covers the sensor, the firmware signal path, the 3D-printed
+fingertip enclosure, and the analysis in MATLAB.
 
-A tethered fingertip photoplethysmography (PPG) monitor built to (a) acquire and display heart
-rate (HR) and an uncalibrated blood-oxygen (SpO2) estimate, and (b) serve as the subject of a
-measurement-agreement study against a reference HR device. Scope covers the sensor front end,
-firmware signal path, the 3D-printed fingertip enclosure, and the MATLAB validation analysis.
+## 2. Intended Use
 
-## 2. Intended Use & Non-Use
-
-**Intended use:** Personal engineering prototype and measurement-study platform. Educational and
-portfolio purposes only.
-
-**Explicitly NOT intended for:** Any clinical, diagnostic, or health-monitoring use. This is not
-a medical device. It has not undergone regulatory testing, clinical validation, or SpO2
-calibration against co-oximetry. Readings must not be used to make any health decision.
+This is a personal engineering prototype for learning and portfolio purposes. It is not a medical
+device. It has not been clinically validated, and the SpO2 estimate has not been calibrated against
+a reference oximeter, so no reading should be used to make a health decision.
 
 ## 3. System Description
 
-- **Sensor:** MAX30102 reflectance PPG (red ~660 nm + IR ~880 nm LEDs, single photodiode).
-- **Controller:** ESP32 (Arduino framework), USB-powered.
-- **Display:** SSD1306 OLED, shared I2C bus with the sensor.
-- **Data path:** Timestamped samples streamed over serial → CSV on host for MATLAB analysis.
-- **Enclosure (worn part):** 3D-printed fingertip housing that fixes sensor position and shrouds
-  the fingertip from ambient light. Electronics remain off-body on a breadboard.
-- **Reference (ground truth):** Chest-strap HR monitor (electrical R-wave detection, ~±1 bpm).
+- Sensor: MAX30102 reflectance PPG (red ~660 nm and IR ~880 nm LEDs, single photodiode)
+- Controller: ESP32 (Arduino framework), powered over USB
+- Display: SSD1306 OLED, sharing the I2C bus with the sensor
+- Data path: timestamped samples sent over serial and saved as CSV for analysis
+- Enclosure: 3D-printed fingertip housing that holds the sensor in a fixed position and shrouds the
+  fingertip from ambient light. The electronics stay off-body on a breadboard.
+- Reference: chest-strap heart-rate monitor (electrical R-wave detection, accurate to about ±1 bpm)
 
 ## 4. Functional Requirements
 
-| ID | Requirement | Verification |
-|----|-------------|--------------|
-| FR-01 | Acquire raw red & IR PPG from the MAX30102 at ≥ 50 Hz | Bench / serial inspection |
-| FR-02 | Compute and display live HR on the OLED, refreshed ≥ every 2 s | Bench / demo |
-| FR-03 | Compute and display an **uncalibrated** SpO2 estimate (ratio-of-ratios) | Bench / demo |
-| FR-04 | Stream timestamped samples over serial for CSV logging | File inspection |
-| FR-05 | Enclosure shrouds the fingertip (ambient-light rejection) and holds the sensor at a repeatable position and contact pressure | Physical inspection / repeatability test |
+| ID | Requirement | How it is checked |
+|----|-------------|-------------------|
+| FR-01 | Read raw red and IR PPG values from the MAX30102 at 50 Hz or higher | Serial output |
+| FR-02 | Show live heart rate on the OLED, updated at least every 2 seconds | Bench test |
+| FR-03 | Compute and show an uncalibrated SpO2 estimate using the ratio-of-ratios method | Bench test |
+| FR-04 | Send timestamped samples over serial for CSV logging | Check the saved file |
+| FR-05 | Enclosure blocks ambient light and holds the sensor at a repeatable position and pressure | Physical check and repeatability test |
 
-## 5. Performance Requirements — Acceptance Criteria
+## 5. Performance Targets
 
-> Targets are **frozen** at v1.0. Fill **Result** and **Pass/Fail** after the validation study
-> (Week 6). Numbers below are the author's pre-registered targets for a low-motion fingertip
-> device.
-
-| ID | Metric | Target (acceptance criterion) | Verification method | Result | Pass/Fail |
-|----|--------|-------------------------------|---------------------|--------|-----------|
-| PR-01 | HR accuracy vs reference | Mean absolute error ≤ **5 bpm**; bias within **±3 bpm**; 95% limits of agreement within **±10 bpm**; over **50–120 bpm** | Bland–Altman + regression vs chest strap | _____ | _____ |
-| PR-02 | HR acquisition time | Valid HR within **15 s** of finger placement in **≥ 90%** of trials | Timed bench trials (n ≥ 10) | _____ | _____ |
-| PR-03 | Signal-quality detection | Device flags & excludes no-finger (IR below threshold) and gross motion-artifact segments | Bench test with induced artifacts | _____ | _____ |
-| PR-04 | Repeatability at rest | HR SD ≤ **3 bpm** across **5** repeated placements | Repeated-placement test | _____ | _____ |
-| PR-05 | SpO2 plausibility (uncalibrated) | Reports a physiologically plausible value (≈ 95–100%) on a healthy resting subject; **accuracy not claimed** | Bench observation | _____ | _____ |
+| ID | What is measured | Target | How it is tested | Result | Pass/Fail |
+|----|------------------|--------|------------------|--------|-----------|
+| PR-01 | HR accuracy vs. the reference | Mean absolute error ≤ 5 bpm, bias within ±3 bpm, and 95% limits of agreement within ±10 bpm, over 50–120 bpm | Bland–Altman and regression against the chest strap | | |
+| PR-02 | Time to a valid reading | A valid HR within 15 seconds of placing a finger, in at least 90% of tries | Timed trials (10 or more) | | |
+| PR-03 | Signal-quality checking | Flags and ignores no-finger and heavy-motion segments | Bench test with deliberate motion and finger removal | | |
+| PR-04 | Repeatability at rest | HR spread (standard deviation) ≤ 3 bpm across 5 repeated placements | Repeated-placement test | | |
+| PR-05 | SpO2 plausibility | Gives a reasonable value (about 95–100%) on a healthy person at rest; accuracy is not claimed | Bench observation | | |
 
 ## 6. Design Constraints
 
-| ID | Constraint |
-|----|------------|
-| DC-01 | USB-powered; battery/power management out of scope for this revision |
-| DC-02 | Electronics off-body on breadboard; only the sensor housing is worn |
-| DC-03 | FDM-printed enclosure — PLA for the fixed cradle (v1), PETG for the sprung clip (v2, if built) |
-| DC-04 | MAX30102 and SSD1306 share one I2C bus (distinct addresses) |
+- Powered over USB; battery and power management are out of scope for this version.
+- Only the sensor housing is worn; the rest of the electronics stay on a breadboard.
+- Enclosure is FDM printed — PLA for the fixed cradle, PETG for the spring clip if I build one.
+- The MAX30102 and the OLED share one I2C bus, at different addresses.
 
-## 7. Limitations & Out of Scope
+## 7. Limitations
 
-- **Single subject (n = 1).** This is a device-agreement study, not a population/clinical study.
-- **SpO2 uncalibrated.** No co-oximetry, no controlled desaturation; method shown, accuracy not claimed.
-- **Reference is not absolute truth.** The chest strap carries its own (~±1 bpm) error and is
-  treated as the practical ground truth, not a gold standard.
-- **Not a medical device.** No regulatory, biocompatibility, or clinical validation performed.
-- **Motion.** Targets are set for low-motion conditions; performance under vigorous motion is
-  characterized, not guaranteed.
+- Single subject (n = 1). This tests how well my device agrees with a reference, not how it
+  performs across a population.
+- The SpO2 estimate is uncalibrated. I show the method but do not claim it is accurate.
+- The reference is not perfect truth. The chest strap has its own small error (about ±1 bpm) and is
+  treated as a practical reference, not a gold standard.
+- Not a medical device. No regulatory or clinical testing was done.
+- Targets assume low motion. Behavior during heavy motion is described, not guaranteed.
 
-## 8. Verification / Test Protocol (summary)
+## 8. Test Plan
 
-1. **Bench verification** of FR-01–FR-04 (signal present, display live, CSV logging works).
-2. **Agreement study (PR-01):** Wear device and chest strap simultaneously. Capture paired HR
-   across the full range by alternating rest and stair-climbing, recording the recovery decay,
-   to sweep ~50–120 bpm. Target ≥ 30 paired points spanning the range. Analyze in MATLAB:
-   Bland–Altman (bias, ±1.96 SD limits of agreement, 95% CI on the limits), linear regression,
-   and a check for proportional bias (difference vs. magnitude).
-3. **Timed trials (PR-02)** and **repeated-placement test (PR-04).**
-4. **Induced-artifact test (PR-03):** remove finger / introduce motion, confirm flagging.
-5. Record all measured values in §5 and write the honest pass/fail summary in the repo README.
+1. Check the functional requirements (FR-01 to FR-04): confirm the signal is present, the display
+   updates live, and the CSV logging works.
+2. Agreement study (PR-01): wear the device and the chest strap at the same time and record paired
+   heart-rate readings. Cover the full range by alternating rest and stair-climbing and recording
+   the recovery as the heart rate comes back down, aiming for at least 30 paired points across
+   50–120 bpm. Analyze in MATLAB with a Bland–Altman plot (bias, ±1.96 SD limits of agreement, and
+   confidence intervals on the limits), a regression, and a check for whether the error grows at
+   higher heart rates.
+3. Timed trials (PR-02) and the repeated-placement test (PR-04).
+4. Signal-quality test (PR-03): remove the finger and add motion, and confirm those segments are
+   flagged.
+5. Record the measured values in Section 5 and summarize the pass/fail outcome in the README.
+
+## 9. Revision History
+
+| Version | Date | Change |
+|---------|------|--------|
+| 1.0 | 2026-07-19 | Targets set before data collection |
 
 ## 9. Revision History
 
