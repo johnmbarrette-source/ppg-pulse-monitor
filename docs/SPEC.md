@@ -74,12 +74,26 @@ a reference oximeter, so no reading should be used to make a health decision.
 
 1. Check the functional requirements (FR-01 to FR-04): confirm the signal is present, the display
    updates live, and the CSV logging works.
-2. Agreement study (PR-01): wear the device and the chest strap at the same time and record paired
-   heart-rate readings. Cover the full range by alternating rest and stair-climbing and recording
-   the recovery as the heart rate comes back down, aiming for at least 30 paired points across
-   50–120 bpm. Analyze in MATLAB with a Bland–Altman plot (bias, ±1.96 SD limits of agreement, and
-   confidence intervals on the limits), a regression, and a check for whether the error grows at
-   higher heart rates.
+2. Agreement study (PR-01): wear the device and the reference at the same time and record paired
+   heart-rate readings. Because the device is tethered to the laptop over USB and the sensor is
+   sensitive to motion, all readings are taken while seated and still. The heart-rate range is
+   covered two ways:
+   - Resting captures: sit calmly and record, to anchor the low end (about 50–70 bpm).
+   - Post-exercise recovery captures: run for a couple of minutes to raise the heart rate well
+     above 120 bpm, then immediately sit down, place the finger on the sensor, hold still, and
+     record for several minutes as the heart rate decays back toward rest. A single recovery
+     capture sweeps most of the range under low-motion conditions.
+   Repeat until there are at least 30 paired points spanning the full range.
+
+   Clock syncing: the device and the reference log on separate clocks, so the two time series must
+   be aligned before pairing. Confirm the laptop and reference-device clocks are correct beforehand,
+   and mark a shared start instant for each capture (for example, note the exact start time and
+   create an identifiable landmark in the signal). The two series are then aligned by this marker in
+   MATLAB before any readings are paired.
+
+   Analyze in MATLAB with a Bland–Altman plot (bias, ±1.96 SD limits of agreement, and confidence
+   intervals on the limits), a regression, and a check for whether the error grows at higher heart
+   rates.
 3. Timed trials (PR-02) and the repeated-placement test (PR-04).
 4. Signal-quality test (PR-03): remove the finger and add motion, and confirm those segments are
    flagged.
